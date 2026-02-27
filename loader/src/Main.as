@@ -37,10 +37,10 @@ package {
 		private var logField:TextField;
 
 		private var backgroundDomain:ApplicationDomain = new ApplicationDomain();
-		private var backgroundContext:LoaderContext;
+		private var backgroundContext:LoaderContext = createLoaderContext();
 
 		private var clientDomain:ApplicationDomain = new ApplicationDomain();
-		private var clientContext:LoaderContext;
+		private var clientContext:LoaderContext = createLoaderContext();
 
 		private var gameMovieClip:MovieClip;
 		private var titleFile:String;
@@ -49,6 +49,9 @@ package {
 
 		public function Main() {
 			NativeApplication.nativeApplication.systemIdleMode = SystemIdleMode.KEEP_AWAKE;
+			
+			prepareContext(backgroundContext);
+			prepareContext(clientContext);
 
 			const fmt:TextFormat = new TextFormat();
 			fmt.font = "_sans";
