@@ -19,6 +19,10 @@ AdventureQuest Worlds still runs on Flash. Mobile players have no official optio
 3. A lightweight ActionScript loader wraps the patched game and handles initialization.
 4. Everything is packaged into an Android APK using the Adobe AIR SDK. The entire build process runs openly on GitHub Actions, what you see in the code is exactly what gets built.
 
+## Download
+
+Grab the latest APK from the [Releases](../../releases/latest) tab.
+Pick **armv7** for older devices or **armv8** for anything recent (2017+).
 
 ---
 
