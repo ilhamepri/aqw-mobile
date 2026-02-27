@@ -3,7 +3,7 @@ use serde::Deserialize;
 use std::collections::HashMap;
 use std::error::Error;
 use std::fs::File;
-use std::fs::{self, DirBuilder, FileType, ReadDir};
+use std::fs::{self, FileType, ReadDir};
 use std::io::Write;
 use std::path::Path;
 use std::process::{Command, ExitStatus};
@@ -18,23 +18,33 @@ async fn main() {
 
     let patches: HashMap<String, String> = load_patch();
 
-    let _ = apply_patch(&patches, Path::new("assets/Game-0"));
+    apply_patch(&patches, Path::new("assets/Game-0")).expect("Error while applying the patch");
 }
 
-fn apply_patch(patches: &HashMap<String, String>, path: &Path) -> Result<(), Box<dyn Error>>{
+fn apply_patch(patches: &HashMap<String, String>, path: &Path) -> Result<(), Box<dyn Error>> {
     for files in fs::read_dir(path)? {
         if let Ok(file) = files {
             if file.file_type()?.is_dir() {
                 let _ = apply_patch(&patches, &file.path());
             } else {
                 if file.path().extension().map_or(false, |ext| ext == "asasm") {
-                    let mut content = fs::read_to_string(&path)?;
+                    let content = fs::read_to_string(&file.path())?;
 
                     for (find, replace) in patches {
-                        if content.contains(find) {
-                            content = content.replace(find, replace);
+                        let find_normalized = find.lines().map(|l| l.trim()).collect::<Vec<_>>().join("\n");
+                        let content_normalized = content.lines().map(|l| l.trim()).collect::<Vec<_>>().join("\n");
 
-                            println!("Applied patch to {:?}", file.path())
+                        if content_normalized.contains(&find_normalized) {
+                            println!("Applying patch to {:?}", file.path());
+                            println!("Find: {}", find);
+                            println!("Replace: {}", replace);
+
+                            let result = content_normalized.replace(&find_normalized, replace);
+
+                            fs::write(file.path(), &result)?;
+                        } else {
+                            println!("No patch found for {:?}", file.path());
+                            println!("Looking for: {}", find);
                         }
                     }
                 }
@@ -79,7 +89,7 @@ fn load_patch() -> HashMap<String, String> {
                     }
                 }
 
-                if !find_content.is_empty() && !replace_content.is_empty() {
+                if !find_content.is_empty() {
                     patches_files.insert(find_content, replace_content);
                 }
             }
@@ -132,8 +142,6 @@ async fn download_asset() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("Downloading: {}", game_version.file);
 
-    let mut downloaded_file: File = File::create("assets/Game.swf")?;
-
     let mut response: Response = client
         .get(format!(
             "https://game.aq.com/game/gamefiles/{}",
@@ -142,6 +150,8 @@ async fn download_asset() -> Result<(), Box<dyn std::error::Error>> {
         .header("User-Agent", "Mozilla/5.0")
         .send()
         .await?;
+
+    let mut downloaded_file: File = File::create("assets/Game.swf")?;
 
     while let Some(chunk) = response.chunk().await? {
         downloaded_file.write_all(&chunk)?;
