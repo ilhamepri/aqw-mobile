@@ -17,7 +17,7 @@ package {
 	import flash.text.TextFormat;
 	import flash.utils.ByteArray;
 
-	[SWF(width="960", height="550", frameRate="600", backgroundColor="#000")]
+	[SWF(width="960", height="550", frameRate="30", backgroundColor="#000")]
 	public dynamic class Main extends MovieClip {
 
 		MovieClip.prototype.removeAllChildren = function ():void {
