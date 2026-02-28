@@ -3,42 +3,56 @@ use serde::Deserialize;
 use std::collections::HashMap;
 use std::error::Error;
 use std::fs::File;
-use std::fs::{self, FileType, ReadDir};
+use std::fs::{self, ReadDir};
 use std::io::Write;
 use std::path::Path;
 use std::process::{Command, ExitStatus};
 
 #[tokio::main]
 async fn main() {
-    clear_asset_dir();
+    #[rustfmt::skip]
+    clear_asset_dir()
+        .expect("Failed to clear existing assets directory.");
 
-    download_asset().await.expect("Could not load Game.swf");
+    #[rustfmt::skip]
+    download_asset()
+        .await
+        .expect("Failed to download asset.");
 
-    export_bytecode();
+    #[rustfmt::skip]
+    export_bytecode()
+        .expect("Failed to export bytecode from target asset.");
 
-    let patches: HashMap<String, String> = load_patch();
+    #[rustfmt::skip]
+    let patches: HashMap<String, String> = load_patch(Path::new("patches"))
+        .expect("Failed to load patch files from target directory.");
 
-    apply_patch(&patches, Path::new("assets/Game-0")).expect("Error while applying the patch");
+    #[rustfmt::skip]
+    apply_patch(&patches, Path::new("assets/Game-0"))
+        .expect("Failed to apply patches to target asset.");
 
-    build();
+    #[rustfmt::skip]
+    build()
+        .expect("Build failed.");
 }
 
-fn build() {
-    let output: ExitStatus = Command::new("rabcasm")
+fn build() -> Result<(), Box<dyn Error>> {
+    let output_rabcasm = Command::new("rabcasm")
         .arg("assets/Game-0/Game-0.main.asasm")
-        .status()
-        .expect("failed to build rabcasm");
+        .status()?;
 
-    println!("status: {}", output);
-
-    let output: ExitStatus = Command::new("abcreplace")
+    let output_abcreplace: ExitStatus = Command::new("abcreplace")
         .arg("assets/Game.swf")
         .arg("0")
         .arg("assets/Game-0/Game-0.main.abc")
-        .status()
-        .expect("failed to execute abcreplace");
+        .status()?;
 
-    println!("status: {}", output);
+    println!(
+        "rabcasm: {}, abcreplace : {}",
+        output_abcreplace, output_rabcasm
+    );
+
+    Ok(())
 }
 
 fn find_all_original_blocks(content: &str, find_normalized: &str) -> Vec<String> {
@@ -109,11 +123,10 @@ fn apply_patch(patches: &HashMap<String, String>, path: &Path) -> Result<(), Box
                             .collect::<Vec<_>>()
                             .join("\n");
 
-
                         if content_normalized.contains(&find_normalized) {
                             let blocks = find_all_original_blocks(&content, &find_normalized);
 
-                            //println!("Applying patch to {:?}", file.path());
+                            println!("Applying patch to {:?}", file.path());
                             //println!("Find: {}", find);
                             //println!("Replace: {}", replace);
 
@@ -132,18 +145,13 @@ fn apply_patch(patches: &HashMap<String, String>, path: &Path) -> Result<(), Box
     Ok(())
 }
 
-fn load_patch() -> HashMap<String, String> {
+fn load_patch(path: &Path) -> Result<HashMap<String, String>, Box<dyn Error>> {
     let mut patches_files: HashMap<String, String> = HashMap::new();
 
-    let patches: ReadDir = fs::read_dir("patches").expect("Failed to load patches directory.");
-
-    for patch_dir in patches {
-        if let Ok(p) = patch_dir {
-            let file_type: FileType = p.file_type().expect("Error reading file type.");
-
-            if file_type.is_dir() {
-                let patch: ReadDir =
-                    fs::read_dir(p.path()).expect("Failed to load patch directory.");
+    for patch_dir in fs::read_dir(path)? {
+        if let Ok(path_target) = patch_dir {
+            if path_target.file_type()?.is_dir() {
+                let patch: ReadDir = fs::read_dir(path_target.path())?;
 
                 let mut find_content: String = String::new();
                 let mut replace_content: String = String::new();
@@ -151,14 +159,8 @@ fn load_patch() -> HashMap<String, String> {
                 for patch_files in patch {
                     if let Ok(file) = patch_files {
                         match &*file.file_name().to_string_lossy() {
-                            "find.txt" => {
-                                find_content = fs::read_to_string(file.path())
-                                    .expect("Error reading find.txt");
-                            }
-                            "replace.txt" => {
-                                replace_content = fs::read_to_string(file.path())
-                                    .expect("Error reading replace.txt");
-                            }
+                            "find.txt" => find_content = fs::read_to_string(file.path())?,
+                            "replace.txt" => replace_content = fs::read_to_string(file.path())?,
                             _ => {
                                 // Default
                             }
@@ -169,39 +171,33 @@ fn load_patch() -> HashMap<String, String> {
                 if !find_content.is_empty() {
                     patches_files.insert(find_content, replace_content);
                 }
+            } else {
             }
         }
     }
 
-    patches_files
+    Ok(patches_files)
 }
 
-fn export_bytecode() {
-    let output: ExitStatus = Command::new("abcexport")
-        .arg("assets/Game.swf")
-        .status()
-        .expect("failed to execute abcexport");
+fn export_bytecode() -> Result<(), Box<dyn Error>> {
+    let output_abcexport: ExitStatus = Command::new("abcexport").arg("assets/Game.swf").status()?;
 
-    println!("status: {}", output);
+    let output_rabcdasm: ExitStatus = Command::new("rabcdasm").arg("assets/Game-0.abc").status()?;
 
-    let output: ExitStatus = Command::new("rabcdasm")
-        .arg("assets/Game-0.abc")
-        .status()
-        .expect("failed to execute rabcdasm");
+    println!(
+        "abcexport: {}, rabcdasm : {}",
+        output_abcexport, output_rabcdasm
+    );
 
-    println!("status: {}", output);
+    Ok(())
 }
 
-fn clear_asset_dir() {
-    match fs::remove_dir_all("assets") {
-        Ok(()) => println!("File successfully deleted."),
-        Err(error) => eprintln!("Error deleting file: {}", error),
-    }
+fn clear_asset_dir() -> Result<(), Box<dyn Error>> {
+    fs::remove_dir_all("assets")?;
 
-    match fs::create_dir("assets") {
-        Ok(()) => println!("File successfully deleted."),
-        Err(error) => eprintln!("Error deleting file: {}", error),
-    }
+    fs::create_dir("assets")?;
+
+    Ok(())
 }
 
 async fn download_asset() -> Result<(), Box<dyn std::error::Error>> {
