@@ -20,6 +20,7 @@ package {
 	import flash.utils.ByteArray;
 
 	import ui.UpdateBanner;
+	import input.GamePad;
 
 	[SWF(width="960", height="550", frameRate="30", backgroundColor="#000")]
 	public dynamic class Main extends MovieClip {
