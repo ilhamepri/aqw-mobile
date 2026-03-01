@@ -1,19 +1,26 @@
 name: Build APK
 
 on:
-#  push:
-#    branches: [master]
   workflow_dispatch:
+    inputs:
+      version_prefix:
+        description: 'Version prefix (e.g. 1.0, 1.1, 2.0)'
+        required: false
+        default: '1.0'
 
 jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Set version
+        id: version
+        run: echo "VERSION=v${{ github.event.inputs.version_prefix }}.${{ github.run_number }}" >> $GITHUB_OUTPUT
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
@@ -66,6 +73,10 @@ jobs:
             -keypass temppass \
             -dname "CN=Unknown, OU=Unknown, O=Unknown, L=Unknown, S=Unknown, C=US"
 
+      - name: Inject version into Config.as
+        run: |
+          sed -i "s/APP_VERSION:String = \".*\"/APP_VERSION:String = \"${{ steps.version.outputs.VERSION }}\"/" loader/src/Config.as
+
       - name: Compile Loader.swf
         run: amxmlc -output loader/Loader.swf loader/src/Main.as
 
@@ -113,17 +124,17 @@ jobs:
               icons/android-icon-512x512.png \
               gamefiles/Game.swf
 
-      - name: Move latest tag to current commit
+      - name: Tag release
         run: |
-          git tag -f latest
-          git push origin latest --force
+          git tag -f ${{ steps.version.outputs.VERSION }}
+          git push origin ${{ steps.version.outputs.VERSION }} --force
 
       - name: Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: latest
-          name: Latest Build
-          prerelease: true
+          tag_name: ${{ steps.version.outputs.VERSION }}
+          name: ${{ steps.version.outputs.VERSION }}
+          prerelease: false
           files: |
             AQWPocket-armv7.apk
             AQWPocket-armv8.apk

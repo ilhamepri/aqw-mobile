@@ -1,21 +1,25 @@
 package {
-	import flash.display.Bitmap;
+
+	import flash.desktop.NativeApplication;
+	import flash.desktop.SystemIdleMode;
 	import flash.display.DisplayObject;
+	import flash.display.Loader;
 	import flash.display.MovieClip;
-	import flash.system.ApplicationDomain;
-	import flash.system.LoaderContext;
+	import flash.display.Sprite;
+	import flash.events.Event;
+	import flash.events.IOErrorEvent;
+	import flash.events.ProgressEvent;
 	import flash.net.URLLoader;
 	import flash.net.URLLoaderDataFormat;
 	import flash.net.URLRequest;
-	import flash.events.Event;
-	import flash.events.ProgressEvent;
-	import flash.events.IOErrorEvent;
-	import flash.display.Loader;
-	import flash.desktop.NativeApplication;
-	import flash.desktop.SystemIdleMode;
+	import flash.system.ApplicationDomain;
+	import flash.system.LoaderContext;
 	import flash.text.TextField;
 	import flash.text.TextFormat;
+	import flash.text.TextFormatAlign;
 	import flash.utils.ByteArray;
+
+	import ui.UpdateBanner;
 
 	[SWF(width="960", height="550", frameRate="30", backgroundColor="#000")]
 	public dynamic class Main extends MovieClip {
@@ -28,13 +32,7 @@ package {
 			}
 		};
 
-		private static const GAME_BASE_URL:String = "https://game.aq.com/game/";
-
-		private static const API_VERSION_URL:String = GAME_BASE_URL + "api/data/gameversion";
-		private static const API_LOGIN_URL:String = GAME_BASE_URL + "api/login/now";
-		private static const TITLE_BASE_URL:String = GAME_BASE_URL + "gamefiles/title/";
-
-		private static const GAME_SWF_PATH:String = "app:/gamefiles/Game.swf";
+		public static const TEXT_FORMAT_DEFAULT:TextFormat = new TextFormat("_sans", 22, 0xc8d8ee, true, null, null, null, null, TextFormatAlign.CENTER);
 
 		private static const STATE_BACKGROUND:int = 0;
 		private static const STATE_GAME:int = 1;
@@ -42,64 +40,58 @@ package {
 
 		private var loading:TextField;
 		private var logField:TextField;
-
 		private var backgroundDomain:ApplicationDomain = new ApplicationDomain();
 		private var backgroundContext:LoaderContext = createLoaderContext();
-
 		private var clientDomain:ApplicationDomain = new ApplicationDomain();
 		private var clientContext:LoaderContext = createLoaderContext();
-
 		private var gameMovieClip:MovieClip;
 		private var titleFile:String;
 		private var backgroundFile:String;
 		private var loadState:int = STATE_BACKGROUND;
 
+		private var container: Sprite = new Sprite();
+
 		public function Main() {
 			NativeApplication.nativeApplication.systemIdleMode = SystemIdleMode.KEEP_AWAKE;
-			
+
+			addChild(container);
+
 			prepareContext(backgroundContext);
 			prepareContext(clientContext);
 
-			const fmt:TextFormat = new TextFormat();
-			fmt.font = "_sans";
-			fmt.size = 16;
-			fmt.color = 0xFFFFFF;
-			fmt.bold = true;
-
 			loading = new TextField();
-			loading.defaultTextFormat = fmt;
+			loading.defaultTextFormat = TEXT_FORMAT_DEFAULT;
 			loading.width = 400;
 			loading.height = 30;
 			loading.x = (960 - 400) / 2;
 			loading.y = (550 - 30) / 2;
 			loading.selectable = false;
 			loading.text = "Loading...";
+
 			addChild(loading);
 
-			const logFmt:TextFormat = new TextFormat();
-			logFmt.font = "_typewriter";
-			logFmt.size = 11;
-			logFmt.color = 0xCCCCCC;
-
 			logField = new TextField();
-			logField.defaultTextFormat = logFmt;
+			logField.defaultTextFormat = TEXT_FORMAT_DEFAULT;
 			logField.width = 920;
 			logField.height = 200;
 			logField.x = 20;
 			logField.y = 330;
 			logField.multiline = true;
 			logField.wordWrap = true;
-			logField.selectable = true; 
+			logField.selectable = true;
 			logField.background = true;
 			logField.backgroundColor = 0x111111;
 			logField.border = true;
 			logField.borderColor = 0x444444;
 			logField.visible = false;
-			addChild(logField);
+
+			container.addChild(logField);
 
 			log("Init");
 
-			fetchJSON(API_VERSION_URL, onVersionComplete);
+			checkForUpdates();
+
+			fetchJSON(Config.API_VERSION_URL, onVersionComplete);
 		}
 
 		private function log(msg:String):void {
@@ -162,12 +154,12 @@ package {
 		}
 
 		private function loadBackground():void {
-			log("Loading background: " + TITLE_BASE_URL + backgroundFile);
+			log("Loading background: " + backgroundFile);
 
 			loading.text = "Loading Background...";
 
 			loadSwf(
-				TITLE_BASE_URL + backgroundFile,
+				Config.GAME_BASE_URL + "gamefiles/title/" + backgroundFile,
 				backgroundContext,
 				onBackgroundComplete,
 				onBackgroundProgress,
@@ -181,12 +173,12 @@ package {
 		}
 
 		private function loadGame():void {
-			log("Loading game client: " + GAME_SWF_PATH);
+			log("Loading game client: " + Config.GAME_SWF_PATH);
 
 			loading.text = "Loading Game...";
 
 			loadSwf(
-				GAME_SWF_PATH,
+				Config.GAME_SWF_PATH,
 				clientContext,
 				onGameComplete,
 				onGameProgress,
@@ -199,17 +191,21 @@ package {
 		private function attachGame():void {
 			log("Attaching game...");
 
+			removeChild(container);
+
 			gameMovieClip = MovieClip(stage.addChild(gameMovieClip));
+
+			gameMovieClip.addChild(container);
 
 			const params:Object = gameMovieClip.params;
 
 			params.sTitle = titleFile;
 			params.isWeb = false;
-			params.sURL = GAME_BASE_URL;
+			params.sURL = Config.GAME_BASE_URL;
 			params.sBG = backgroundFile;
 			params.isEU = false;
 			params.doSignup = false;
-			params.loginURL = API_LOGIN_URL;
+			params.loginURL = Config.API_LOGIN_URL;
 			params.test = false;
 
 			const rootParams:Object = root.loaderInfo.parameters;
@@ -222,6 +218,32 @@ package {
 
 			stage.setChildIndex(gameMovieClip, 0);
 			stage.removeChild(DisplayObject(this));
+		}
+
+		private function checkForUpdates():void {
+			log("Checking for updates...");
+			fetchJSON(Config.GITHUB_RELEASES_URL, onUpdateCheckComplete);
+		}
+
+		private function showUpdateBanner(version:String, url:String):void {
+			container.addChild(new UpdateBanner(version, url));
+			log("Update banner shown — " + version);
+		}
+
+		private function onUpdateCheckComplete(e:Event):void {
+			try {
+				const data:Object = JSON.parse(URLLoader(e.target).data);
+				const latestTag:String = data.tag_name;
+				const releaseUrl:String = data.html_url;
+
+				log("Latest release: " + latestTag + " (current: " + Config.APP_VERSION + ")");
+
+				if (latestTag != Config.APP_VERSION) {
+					showUpdateBanner(latestTag, releaseUrl);
+				}
+			} catch (err:Error) {
+				log("Update check failed: " + err.message);
+			}
 		}
 
 		private function onVersionComplete(e:Event):void {
@@ -246,7 +268,7 @@ package {
 				titleScreen.x = 0;
 				titleScreen.y = 0;
 
-				addChildAt(titleScreen, 1);
+				container.addChildAt(titleScreen, 1);
 			} catch (err:Error) {
 				log("TitleScreen class not found, skipping: " + err.message);
 			}
