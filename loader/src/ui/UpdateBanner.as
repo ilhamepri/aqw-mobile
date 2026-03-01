@@ -41,7 +41,7 @@ package ui {
 			
 			addChild(close);
 
-			x = 10;
+			x = 960 - 10 - this.width;
 			y = 10;
 		}
 

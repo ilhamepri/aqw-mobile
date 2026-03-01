@@ -218,6 +218,8 @@ package {
 
 			stage.setChildIndex(gameMovieClip, 0);
 			stage.removeChild(DisplayObject(this));
+
+			gameMovieClip.addChild(new GamePad(gameMovieClip));
 		}
 
 		private function checkForUpdates():void {
