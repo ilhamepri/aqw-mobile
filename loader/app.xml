@@ -36,6 +36,7 @@
     <manifestAdditions><![CDATA[<manifest>
 <uses-permission android:name="android.permission.INTERNET"/>
 <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+<application android:hardwareAccelerated="true" />
 </manifest>]]></manifestAdditions>
   </android>
   <supportedLanguages>en</supportedLanguages>
