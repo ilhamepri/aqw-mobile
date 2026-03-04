@@ -21,7 +21,7 @@
     <maximizable>true</maximizable>
     <minimizable>true</minimizable>
     <resizable>true</resizable>
-    <softKeyboardBehavior>pan</softKeyboardBehavior>
+    <softKeyboardBehavior>none</softKeyboardBehavior>
   </initialWindow>
   <icon>
     <image36x36>icons/android-icon-36x36.png</image36x36>
@@ -40,7 +40,7 @@
       
 <application
   android:hardwareAccelerated="true"
-  android:windowSoftInputMode="stateHidden|adjustResize" />
+  android:windowSoftInputMode="stateVisible|adjustPan" />
 </manifest>]]></manifestAdditions>
   </android>
   <supportedLanguages>en</supportedLanguages>
