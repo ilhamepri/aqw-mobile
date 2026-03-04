@@ -99,7 +99,6 @@ jobs:
               icons/android-icon-96x96.png \
               icons/android-icon-144x144.png \
               icons/android-icon-192x192.png \
-              icons/android-icon-512x512.png \
               gamefiles/Game.swf
 
       - name: Build APK (armv8)
@@ -142,7 +141,6 @@ jobs:
               icons/android-icon-96x96.png \
               icons/android-icon-144x144.png \
               icons/android-icon-192x192.png \
-              icons/android-icon-512x512.png \
               gamefiles/Game.swf
 
       - name: Build APK (x64)
@@ -164,7 +162,6 @@ jobs:
               icons/android-icon-96x96.png \
               icons/android-icon-144x144.png \
               icons/android-icon-192x192.png \
-              icons/android-icon-512x512.png \
               gamefiles/Game.swf
 
       - name: Tag release
