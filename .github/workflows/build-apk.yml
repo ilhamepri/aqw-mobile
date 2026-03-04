@@ -123,6 +123,50 @@ jobs:
               icons/android-icon-192x192.png \
               gamefiles/Game.swf
 
+      - name: Build APK (x86)
+        run: |
+          adt -package \
+            -target apk-captive-runtime \
+            -arch x86 \
+            -storetype JKS \
+            -keystore temp_keystore.jks \
+            -storepass temppass \
+            -keypass temppass \
+            AQWPocket-x86.apk \
+            loader/app.xml \
+            -C loader \
+              Loader.swf \
+              icons/android-icon-36x36.png \
+              icons/android-icon-48x48.png \
+              icons/android-icon-72x72.png \
+              icons/android-icon-96x96.png \
+              icons/android-icon-144x144.png \
+              icons/android-icon-192x192.png \
+              icons/android-icon-512x512.png \
+              gamefiles/Game.swf
+
+      - name: Build APK (x64)
+        run: |
+          adt -package \
+            -target apk-captive-runtime \
+            -arch x64 \
+            -storetype JKS \
+            -keystore temp_keystore.jks \
+            -storepass temppass \
+            -keypass temppass \
+            AQWPocket-x64.apk \
+            loader/app.xml \
+            -C loader \
+              Loader.swf \
+              icons/android-icon-36x36.png \
+              icons/android-icon-48x48.png \
+              icons/android-icon-72x72.png \
+              icons/android-icon-96x96.png \
+              icons/android-icon-144x144.png \
+              icons/android-icon-192x192.png \
+              icons/android-icon-512x512.png \
+              gamefiles/Game.swf
+
       - name: Tag release
         run: |
           git tag -f ${{ steps.version.outputs.VERSION }}
@@ -137,3 +181,5 @@ jobs:
           files: |
             AQWPocket-armv7.apk
             AQWPocket-armv8.apk
+            AQWPocket-x86.apk
+            AQWPocket-x64.apk
