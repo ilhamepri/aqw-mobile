@@ -46,13 +46,12 @@
 		private var loading:TextField;
 		private var logField:TextField;
 
-		private var backgroundDomain:ApplicationDomain = new ApplicationDomain();
+		private const backgroundDomain:ApplicationDomain = new ApplicationDomain();
 		private var backgroundContext:LoaderContext;
 
-		private var clientDomain:ApplicationDomain = new ApplicationDomain();
+		private const clientDomain:ApplicationDomain = new ApplicationDomain();
 		private var clientContext:LoaderContext;
-
-		private var gameMovieClip:MovieClip;
+		
 		private var titleFile:String;
 		private var backgroundFile:String;
 		private var loadState:int = STATE_BACKGROUND;
