@@ -82,7 +82,7 @@ jobs:
           sed -i "s|<versionLabel>.*</versionLabel>|<versionLabel>${{ steps.version.outputs.VERSION_NUMBER }}</versionLabel>|" loader/app.xml
 
       - name: Compile Loader.swf
-        run: amxmlc -output loader/Loader.swf loader/src/Main.as
+        run: amxmlc -output loader/Loader.swf loader/src/Pocket.as
 
       - name: Build APK (armv7)
         run: |
