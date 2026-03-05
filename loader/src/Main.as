@@ -41,10 +41,13 @@ package {
 
 		private var loading:TextField;
 		private var logField:TextField;
+
 		private var backgroundDomain:ApplicationDomain = new ApplicationDomain();
-		private var backgroundContext:LoaderContext = createLoaderContext();
+		private var backgroundContext:LoaderContext;
+
 		private var clientDomain:ApplicationDomain = new ApplicationDomain();
-		private var clientContext:LoaderContext = createLoaderContext();
+		private var clientContext:LoaderContext;
+
 		private var gameMovieClip:MovieClip;
 		private var titleFile:String;
 		private var backgroundFile:String;
@@ -57,8 +60,17 @@ package {
 
 			addChild(container);
 
-			prepareContext(backgroundContext);
-			prepareContext(clientContext);
+			backgroundContext = new LoaderContext(false, backgroundDomain);
+			backgroundContext.allowCodeImport = true;
+
+			backgroundContext.checkPolicyFile = false;
+			backgroundContext.allowCodeImport = true;
+
+			clientContext = new LoaderContext(false, clientDomain);
+			clientContext.allowCodeImport = true;
+
+			clientContext.checkPolicyFile = false;
+			clientContext.allowCodeImport = true;
 
 			loading = new TextField();
 			loading.defaultTextFormat = TEXT_FORMAT_DEFAULT;
@@ -271,7 +283,7 @@ package {
 				titleScreen.x = 0;
 				titleScreen.y = 0;
 
-				container.addChildAt(titleScreen, 1);
+				addChildAt(titleScreen, 1);
 			} catch (err:Error) {
 				log("TitleScreen class not found, skipping: " + err.message);
 			}
@@ -294,12 +306,6 @@ package {
 
 		private function onGameProgress(e:ProgressEvent):void {
 			loading.text = "Loading Game " + progressPercent(e) + "%";
-		}
-
-		private static function createLoaderContext():LoaderContext {
-			const ctx:LoaderContext = new LoaderContext(false, new ApplicationDomain());
-			ctx.allowCodeImport = true;
-			return ctx;
 		}
 
 		private static function prepareContext(ctx:LoaderContext):void {
