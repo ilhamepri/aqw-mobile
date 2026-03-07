@@ -64,25 +64,21 @@ package core {
 		}
 
 		private function calculateFPS():void {
-			if (pocket.game.ui == null || !pocket.game.ui.mcFPS.visible) {
-				return;
-			}
-
 			if (fpsTS != 0) {
-				var fpsTime:int = new Date().getTime() - fpsTS;
+				const fpsTime:int = new Date().getTime() - fpsTS;
 
-				var x:Number = 0;
+				var removed:Number = 0;
 
 				if (tickList.length == TICK_MAX) {
-					x = tickList.shift();
+					removed = tickList.shift();
 				}
 
 				tickList.push(fpsTime);
-				tickSum = (tickSum + fpsTime) - x;
+				tickSum = (tickSum + fpsTime) - removed;
 
 				var tickFinal:Number = 1000 / (tickSum / tickList.length);
 
-				if (pocket.game.ui.mcFPS.visible) {
+				if (pocket.game.ui && pocket.game.ui.mcFPS.visible) {
 					pocket.game.ui.mcFPS.txtFPS.text = tickFinal.toPrecision(3);
 				}
 				
