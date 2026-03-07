@@ -1,7 +1,5 @@
 ﻿package {
 
-	import core.AvatarMC;
-	import core.Game;
 	import core.World;
 
 	import flash.desktop.NativeApplication;
@@ -60,8 +58,6 @@
 
 		public var game:MovieClip;
 		
-		public const avatarMCCore: AvatarMC = new AvatarMC(this);
-		public const gameCore: Game = new Game(this);
 		public const worldCore: World = new World(this);
 
 		public function Pocket() {
