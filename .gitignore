@@ -1,3 +1,5 @@
 /target
 /assets
 .vscode/settings.json
+*.fla
+/loader/gamefiles/
