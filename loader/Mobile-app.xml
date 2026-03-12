@@ -8,7 +8,7 @@
   <name>AQW Pocket</name>
   <copyright>Community Mod</copyright>
   <initialWindow>
-    <content>Loader.swf</content>
+    <content>Mobile.swf</content>
     <systemChrome>standard</systemChrome>
     <transparent>false</transparent>
     <visible>true</visible>
